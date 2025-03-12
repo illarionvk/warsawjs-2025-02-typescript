@@ -1,0 +1,58 @@
+{:min-bb-version "1.3.190",
+ :tasks
+ {:enter (do (println "[BB] Task started:" (:name (current-task)))
+             (if (:doc (current-task))
+               (println "     --" (:doc (current-task))))
+             (if *command-line-args*
+               (println "[BB] Task arguments:" *command-line-args*))),
+  :leave (do (println "[BB] Task finished:" (:name (current-task)))),
+  ci {:doc "Run all CI checks",
+      :task (do (run 'organize-imports)
+                (run 'prettify)
+                (run 'typecheck)
+                (run 'test)
+                (run 'lint-strict))},
+  compile-ts {:doc "Compile TypeScript files",
+              :task (shell "./devops/compile-ts.sh")},
+  devops-prepare {:doc "Run preparation tasks for devops",
+                  :task (shell "./devops/predevops.sh")},
+  lint {:doc "Lint the code",
+        :task (apply shell
+                     "eslint" "--report-unused-disable-directives-severity=warn"
+                     "--report-unused-inline-configs=warn"
+                     "--config=./eslint.config.mjs"
+                     "./" *command-line-args*)},
+  lint-fs {:doc "Lint filesystem",
+           :task (shell "./devops/lint/lint-filesystem.sh")},
+  lint-strict {:doc "Lint the code with strict rules",
+               :task (do (apply
+                          shell
+                          "eslint"
+                          "--report-unused-disable-directives-severity=warn"
+                          "--report-unused-inline-configs=warn"
+                          "--config=./eslint-strict.config.mjs" "--fix"
+                          "./src" *command-line-args*)
+                         (run 'prettify))},
+  organize-imports {:doc "Sort imports in TS/JS files",
+                    :task (do (shell "fix-verbatim-module-syntax"
+                                     "./tsconfig.json")
+                              (shell "biome"
+                                     "check" "--write"
+                                     "--formatter-enabled=false"
+                                     "--organize-imports-enabled=true"))},
+  prettify {:doc "Format files with Prettier",
+            :task (apply shell "./devops/prettify.sh" *command-line-args*)},
+  start {:doc "Run demo",
+         :task (do (run 'compile-ts)
+                   (apply shell
+                          "node"
+                          "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON"
+                          "./dist/demo/index.js" *command-line-args*))},
+  test {:doc "Run unit test suite",
+        :task (do (shell "./devops/pretest.sh")
+                  (apply shell
+                         {:extra-env {"NODE_ENV" "test"}}
+                         "ava"
+                         *command-line-args*))},
+  typecheck {:doc "Check files with Typescript",
+             :task (shell "tsc" "--noEmit")}}}

@@ -1,0 +1,21 @@
+[
+  {
+    "$schema": "https://swc.rs/schema.json",
+    "test": [".*.(js|jsx|ts|tsx)$"],
+    "module": {
+      "type": "commonjs",
+      "ignoreDynamic": true
+    },
+    "env": {
+      "targets": "node >= 20"
+    },
+    "jsc": {
+      "parser": {
+        "syntax": "typescript",
+        "tsx": true,
+        "decorators": false,
+        "dynamicImport": false
+      }
+    }
+  }
+]

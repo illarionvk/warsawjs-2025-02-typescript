@@ -1,0 +1,60 @@
+services:
+  main:
+    build:
+      context: './'
+      target: 'development'
+    volumes:
+      - './:/app:delegated'
+      - 'tmp:/mnt/tmp'
+      - 'ruby_bundle:/usr/local/bundle'
+      - 'xdg_cache:/home/node/.cache'
+      - 'xdg_config:/home/node/.config'
+    env_file: './.env'
+    command: ['/bin/bash']
+    stdin_open: true
+    tty: true
+
+  main_ci:
+    build:
+      context: './'
+      target: 'ci'
+    environment:
+      - CI=1
+    volumes:
+      - './:/app:delegated'
+      - '/mnt/tmp:/mnt/tmp:delegated'
+    command: ['/bin/bash', '-c', 'while true ; do wait ; done']
+
+  main_cd:
+    build:
+      context: './'
+      target: 'cd'
+    environment:
+      - CI=1
+      - SHOPIFY_FLAG_FORCE=1
+      # Compose forwards only the variables from this list
+      - DEVOPS_AWS_ACCESS_KEY_ID
+      - DEVOPS_AWS_REGION
+      - DEVOPS_AWS_SECRET_ACCESS_KEY
+      - DEVOPS_BUCKET_NAME
+      - SHOPIFY_CLI_ADMIN_AUTH_TOKEN
+      - SHOPIFY_CLI_TTY
+      - SHOPIFY_FLAG_STORE
+      - SHOPIFY_SHOP
+      - SHOPIFY_SHOP_HANDLE
+      - THEME_NAME
+      - UAT_INITIAL_CONTENT_SOURCE
+    networks:
+      - 'cd'
+    volumes:
+      - './:/app:delegated'
+    command: ['/bin/bash', '-c', 'while true ; do wait ; done']
+
+networks:
+  cd:
+
+volumes:
+  tmp:
+  ruby_bundle:
+  xdg_cache:
+  xdg_config:
